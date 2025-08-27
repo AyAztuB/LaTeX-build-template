@@ -1,0 +1,62 @@
+name: Build and Publish PDFs
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Build PDFs with texlive/texlive
+        run: |
+          docker run --rm \
+            -v ${{ github.workspace }}:/workdir \
+            -w /workdir \
+            texlive/texlive:latest \
+            make
+
+      - name: Upload PDFs as artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: pdfs
+          path: "*.pdf"
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Download PDFs
+        uses: actions/download-artifact@v3
+        with:
+          name: pdfs
+          path: public
+
+      - name: Generate index.html
+        run: |
+          {
+            echo "<!DOCTYPE html>"
+            echo "<html><head><meta charset='UTF-8'><title>Available PDFs</title></head><body>"
+            echo "<h1>Available PDFs</h1><ul>"
+            for pdf in public/*.pdf; do
+              pdfname=$(basename "$pdf")
+              echo "<li><a href=\"$pdfname\">$pdfname</a></li>"
+            done
+            echo "</ul></body></html>"
+          } > public/index.html
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GH_WPAT }}
+          publish_dir: ./public
+
