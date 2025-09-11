@@ -2,7 +2,7 @@
 # The build process is implemented in "latex.mak" (included at the end of this file)
 # The build process needs some variables (use to describe the targets)
 
-PAPERS=test1 main
+PAPERS=test1 example2
 
 BUILD_DIR=build/
 # SRC_DIR=src/
@@ -16,10 +16,11 @@ endif
 test1_DEPS=main.c
 test1_SRC_DIR=example_1/
 
-main_SRC_DIR=example_2/
-main_DEPS=img.png
-main_FLAGS=--shell-escape
-main_BIB=refs.bib
-main_GLOSSARY=glossary.tex
+example2_SRC_DIR=example_2/
+example2_DEPS=img.png
+example2_FLAGS=--shell-escape
+example2_BIB=refs.bib
+example2_GLOSSARY=glossary.tex
+example2_TEX=main.tex
 
 include latex.mak

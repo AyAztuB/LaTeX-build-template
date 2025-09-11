@@ -31,26 +31,37 @@ $1_SRC_DIR=$(SRC_DIR)
 endif
 endif
 
-$(BUILD_DIR)$1.aux: $$($1_SRC_DIR)$1.tex $$(patsubst %, $$($1_SRC_DIR)%, $$($1_DEPS))
-	TEXINPUTS=$$($1_SRC_DIR): pdflatex --draftmode $(PDF_FLAGS) $$($1_FLAGS) $1
+ifndef $1_TEX
+$1_TEX=$1.tex
+endif
 
-$(BUILD_DIR)$1.bbl: $(BUILD_DIR)$1.aux $$($1_SRC_DIR)$$($1_BIB)
-	BIBINPUTS=$$($1_SRC_DIR): bibtex $(BUILD_DIR)$1
+$1_BUILD_CMD=$$($1_TEX:%.tex=%)
 
-$(BUILD_DIR)$1.gls: $(BUILD_DIR)$1.aux $$($1_SRC_DIR)$$($1_GLOSSARY)
-	makeglossaries $(GLO_FLAGS) $1
+$(BUILD_DIR)$$($1_BUILD_CMD).aux: $$($1_SRC_DIR)$$($1_TEX) $$(patsubst %, $$($1_SRC_DIR)%, $$($1_DEPS))
+	TEXINPUTS=$$($1_SRC_DIR): pdflatex --draftmode $(PDF_FLAGS) $$($1_FLAGS) $$($1_BUILD_CMD)
 
-$1_BUILD_DEPS=$(BUILD_DIR)$1.aux
+$(BUILD_DIR)$$($1_BUILD_CMD).bbl: $(BUILD_DIR)$$($1_BUILD_CMD).aux $$($1_SRC_DIR)$$($1_BIB)
+	BIBINPUTS=$$($1_SRC_DIR): bibtex $(BUILD_DIR)$$($1_BUILD_CMD)
+
+$(BUILD_DIR)$$($1_BUILD_CMD).gls: $(BUILD_DIR)$$($1_BUILD_CMD).aux $$($1_SRC_DIR)$$($1_GLOSSARY)
+	makeglossaries $(GLO_FLAGS) $$($1_BUILD_CMD)
+
+$1_BUILD_DEPS=$(BUILD_DIR)$$($1_BUILD_CMD).aux
 ifdef $1_BIB
-$1_BUILD_DEPS+=$(BUILD_DIR)$1.bbl
+$1_BUILD_DEPS+=$(BUILD_DIR)$$($1_BUILD_CMD).bbl
 endif
 ifdef $1_GLOSSARY
-$1_BUILD_DEPS+=$(BUILD_DIR)$1.gls
+$1_BUILD_DEPS+=$(BUILD_DIR)$$($1_BUILD_CMD).gls
 endif
 
-$(BUILD_DIR)$1.pdf: $$($1_BUILD_DEPS) $$($1_SRC_DIR)$1.tex
-	TEXINPUTS=$$($1_SRC_DIR): pdflatex $(PDF_FLAGS) $$($1_FLAGS) $1
-	TEXINPUTS=$$($1_SRC_DIR): pdflatex $(PDF_FLAGS) $$($1_FLAGS) $1
+$(BUILD_DIR)$$($1_BUILD_CMD).pdf: $$($1_BUILD_DEPS) $$($1_SRC_DIR)$$($1_BUILD_CMD).tex
+	TEXINPUTS=$$($1_SRC_DIR): pdflatex $(PDF_FLAGS) $$($1_FLAGS) $$($1_BUILD_CMD)
+	TEXINPUTS=$$($1_SRC_DIR): pdflatex $(PDF_FLAGS) $$($1_FLAGS) $$($1_BUILD_CMD)
+
+ifneq ($$($1_BUILD_CMD), $1)
+$(BUILD_DIR)$1.pdf: $(BUILD_DIR)$$($1_BUILD_CMD).pdf
+	@mv $(BUILD_DIR)$$($1_BUILD_CMD).pdf $(BUILD_DIR)$1.pdf
+endif
 endef
 
 $(foreach p,$(PAPERS),$(eval $(call PDF_template,$(p))))
