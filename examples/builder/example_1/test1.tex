@@ -32,6 +32,11 @@
 
 \usepackage{todonotes}
 
+% TEXSRC variable used to "soft-patch" the inputminted cmd in subdirs
+\ifx\TEXSRC\undefined
+	\def\TEXSRC{.}
+\fi
+
 \definecolor{codegreen}{rgb}{0,0.6,0}
 \definecolor{codegray}{rgb}{0.5,0.5,0.5}
 \definecolor{codepurple}{rgb}{0.58,0,0.82}
@@ -258,7 +263,7 @@ _
 
 \section{Code C}
 % XXX: Please note that the minted version < 3.0 cannot resolve inputs using the TEXINPUTS env variable...
-\codeFromFile{File \texttt{main.c}}{c}{example_1/main.c}
+\codeFromFile{File \texttt{main.c}}{c}{\TEXSRC/main.c}
 
 
 \end{document}

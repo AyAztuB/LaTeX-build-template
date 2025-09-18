@@ -25,7 +25,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: pdfs
-          path: "*.pdf"
+          path: |
+            *.pdf
+            **/*.pdf
 
   deploy:
     needs: build
@@ -47,9 +49,9 @@ jobs:
             echo "<!DOCTYPE html>"
             echo "<html><head><meta charset='UTF-8'><title>Available PDFs</title></head><body>"
             echo "<h1>Available PDFs</h1><ul>"
-            for pdf in public/*.pdf; do
-              pdfname=$(basename "$pdf")
-              echo "<li><a href=\"$pdfname\">$pdfname</a></li>"
+            for pdf in $(find public -type f -name "*.pdf"); do
+              relpath="${pdf#public/}"
+              echo "<li><a href=\"$relpath\">$relpath</a></li>"
             done
             echo "</ul></body></html>"
           } > public/index.html
