@@ -76,7 +76,7 @@ This will produce `example1.pdf`.
 | Variable      | Required                 | Description                                                                                                                          |
 | ------------- | --------------------     | ------------------------------------------------------------------------------------------------------------------------------------ |
 | `PAPERS`      | **Yes**                  | List of target names (without `.tex`). Example: `PAPERS = report thesis`                                                             |
-| `BUILD_DIR`   | No **(but recommended)** | Directory for intermediate LaTeX build files. Must end with `/` if used. Strongly encouraged to ensure `make clean` works correctly. |
+| `BUILD_DIR`   | No                       | Directory for intermediate LaTeX build files (default: `build/`). Must end with `/` if used.                                         |
 | `SRC_DIR`     | No                       | Global source directory for all papers. Must end with `/` if used.                                                                   |
 | `$1_SRC_DIR`  | No                       | Source directory for a specific paper (`$1` = paper name).                                                                           |
 | `$1_FLAGS`    | No                       | Extra flags passed to `pdflatex` for this paper.                                                                                     |
@@ -87,15 +87,19 @@ This will produce `example1.pdf`.
 
 ---
 
-### 3. Provided Targets
+### 3. Build Process Note
+
+To ensure cross-references, citations, and glossaries are correctly updated, the build process executes `pdflatex` twice. It does not currently parse log files to determine if additional reruns are necessary.
 
 The `latex.mak` file defines the following **PHONY** targets:
 
-| Target      | Description                                                    |
-| ----------- | -------------------------------------------------------------- |
-| `all`       | Default target - builds all `PAPERS` into PDFs.                |
-| `clean`     | Removes all intermediate/temporary files (but **keeps PDFs**). |
-| `veryclean` | Performs `clean` and also removes the generated PDFs.          |
+| Target          | Description                                                    |
+| -----------     | -------------------------------------------------------------- |
+| `all`           | Default target - builds all `PAPERS` into PDFs.                |
+| `help`          | Displays current configuration and available papers.           |
+| `<paper_name>`  | Builds a specific paper (e.g., `make example1`).               |
+| `clean`         | Removes all intermediate/temporary files (but **keeps PDFs**). |
+| `veryclean`     | Performs `clean` and also removes the generated PDFs.          |
 
 Intermediate build rules are also defined internally to handle `pdflatex`, `bibtex`, and `makeglossaries` in the correct order.
 

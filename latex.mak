@@ -1,13 +1,18 @@
-## TODO: test glossary and recompilation
+## Author: AyAztuB
+## License: MIT
+## Copyright (c) 2025 AyAztuB
 
-.PHONY: all clean veryclean
+.PHONY: all clean veryclean help $(PAPERS)
+
+BUILD_DIR ?= build/
 
 .SECONDEXPANSION:
 
-all: $(BUILD_DIR) $(PAPERS:%=%.pdf)
+.DEFAULT_GOAL :=
 
-$(BUILD_DIR):
-	@mkdir -p $@
+all: $(PAPERS:%=%.pdf)
+
+$(PAPERS): %: %.pdf
 
 PDF_FLAGS=
 GLO_FLAGS=
@@ -35,50 +40,51 @@ ifndef $1_TEX
 $1_TEX=$1.tex
 endif
 
-$1_BUILD_CMD=$$($1_TEX:%.tex=%)
+$(BUILD_DIR)$1.aux: $$($1_SRC_DIR)$$($1_TEX) $$(patsubst %, $$($1_SRC_DIR)%, $$($1_DEPS))
+	@mkdir -p $$(@D)
+	TEXINPUTS=$$($1_SRC_DIR): pdflatex --draftmode $(PDF_FLAGS) -jobname=$1 $$($1_FLAGS) $$($1_SRC_DIR)$$($1_TEX)
 
-$(BUILD_DIR)$$($1_BUILD_CMD).aux: $$($1_SRC_DIR)$$($1_TEX) $$(patsubst %, $$($1_SRC_DIR)%, $$($1_DEPS))
-	TEXINPUTS=$$($1_SRC_DIR): pdflatex --draftmode $(PDF_FLAGS) $$($1_FLAGS) $$($1_BUILD_CMD)
+$(BUILD_DIR)$1.bbl: $(BUILD_DIR)$1.aux $$($1_SRC_DIR)$$($1_BIB)
+	BIBINPUTS=$$($1_SRC_DIR): bibtex $(BUILD_DIR)$1
 
-$(BUILD_DIR)$$($1_BUILD_CMD).bbl: $(BUILD_DIR)$$($1_BUILD_CMD).aux $$($1_SRC_DIR)$$($1_BIB)
-	BIBINPUTS=$$($1_SRC_DIR): bibtex $(BUILD_DIR)$$($1_BUILD_CMD)
+$(BUILD_DIR)$1.gls: $(BUILD_DIR)$1.aux $$($1_SRC_DIR)$$($1_GLOSSARY)
+	makeglossaries $(GLO_FLAGS) $1
 
-$(BUILD_DIR)$$($1_BUILD_CMD).gls: $(BUILD_DIR)$$($1_BUILD_CMD).aux $$($1_SRC_DIR)$$($1_GLOSSARY)
-	makeglossaries $(GLO_FLAGS) $$($1_BUILD_CMD)
-
-$1_BUILD_DEPS=$(BUILD_DIR)$$($1_BUILD_CMD).aux
+$1_BUILD_DEPS=$(BUILD_DIR)$1.aux
 ifdef $1_BIB
-$1_BUILD_DEPS+=$(BUILD_DIR)$$($1_BUILD_CMD).bbl
+$1_BUILD_DEPS+=$(BUILD_DIR)$1.bbl
 endif
 ifdef $1_GLOSSARY
-$1_BUILD_DEPS+=$(BUILD_DIR)$$($1_BUILD_CMD).gls
+$1_BUILD_DEPS+=$(BUILD_DIR)$1.gls
 endif
 
-$(BUILD_DIR)$$($1_BUILD_CMD).pdf: $$($1_BUILD_DEPS) $$($1_SRC_DIR)$$($1_BUILD_CMD).tex
-	TEXINPUTS=$$($1_SRC_DIR): pdflatex $(PDF_FLAGS) $$($1_FLAGS) $$($1_BUILD_CMD)
-	TEXINPUTS=$$($1_SRC_DIR): pdflatex $(PDF_FLAGS) $$($1_FLAGS) $$($1_BUILD_CMD)
-
-ifneq ($$($1_BUILD_CMD), $1)
-$(BUILD_DIR)$1.pdf: $(BUILD_DIR)$$($1_BUILD_CMD).pdf
-	@mv $(BUILD_DIR)$$($1_BUILD_CMD).pdf $(BUILD_DIR)$1.pdf
-endif
+$(BUILD_DIR)$1.pdf: $$($1_BUILD_DEPS) $$($1_SRC_DIR)$$($1_TEX)
+	TEXINPUTS=$$($1_SRC_DIR): pdflatex $(PDF_FLAGS) -jobname=$1 $$($1_FLAGS) $$($1_SRC_DIR)$$($1_TEX)
+	TEXINPUTS=$$($1_SRC_DIR): pdflatex $(PDF_FLAGS) -jobname=$1 $$($1_FLAGS) $$($1_SRC_DIR)$$($1_TEX)
 endef
 
 $(foreach p,$(PAPERS),$(eval $(call PDF_template,$(p))))
 
-ifdef BUILD_DIR
-%.pdf: $(BUILD_DIR) $(BUILD_DIR)%.pdf
-	@mv $(BUILD_DIR)$@ $@
-endif
+%.pdf: $(BUILD_DIR)%.pdf
+	@mv -f $^ $@
 
-ifdef BUILD_DIR
 clean:
 	${RM} -rf ${BUILD_DIR}
-else
-clean:
-	${RM} *.aux *.log *.out *.bbl *.blg *.toc *.gl* *.ist *.acn *.acr *.alg *.lof *.lot *.lol *.run.xml *.bcf *.fdb_latexmk *.fls
-endif
 
 veryclean: clean
 	${RM} $(PAPERS:%=%.pdf)
+
+help:
+	@echo "LaTeX Build Template"
+	@echo "--------------------"
+	@echo "Build Directory: $(BUILD_DIR)"
+	@echo ""
+	@echo "Available Papers:"
+	@$(foreach p,$(PAPERS), \
+		echo "  * $(p)"; \
+		echo "      Source: $($(p)_SRC_DIR)"; \
+		echo "      Main:   $($(p)_TEX)"; \
+		echo "      Output: $(p).pdf"; \
+		echo ""; \
+	)
 
