@@ -24,4 +24,7 @@ example2_BIB=refs.bib
 example2_GLOSSARY=glossary.tex
 example2_TEX=main.tex
 
-include ../../latex.mak
+latex.mak:
+	wget https://raw.githubusercontent.com/AyAztuB/LaTeX-build-template/refs/heads/main/latex.mak
+
+include latex.mak
