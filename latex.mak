@@ -40,12 +40,24 @@ ifndef $1_TEX
 $1_TEX=$1.tex
 endif
 
-$(BUILD_DIR)$1.aux: $$($1_SRC_DIR)$$($1_TEX) $$(patsubst %, $$($1_SRC_DIR)%, $$($1_DEPS))
-	@mkdir -p $$(@D)
-	TEXINPUTS=$$($1_SRC_DIR): pdflatex --draftmode $(PDF_FLAGS) -jobname=$1 $$($1_FLAGS) $$($1_SRC_DIR)$$($1_TEX)
+$1_ALL_DIRS=$$(addprefix $(BUILD_DIR), $$(dir $$($1_DEPS)))
 
-$(BUILD_DIR)$1.bbl: $(BUILD_DIR)$1.aux $$($1_SRC_DIR)$$($1_BIB)
+$(BUILD_DIR)$1.aux: $$($1_SRC_DIR)$$($1_TEX) $$(patsubst %, $$($1_SRC_DIR)%, $$($1_DEPS))
+	@mkdir -p $$(@D) $$($1_ALL_DIRS)
+	BIBINPUTS=$$($1_SRC_DIR): TEXINPUTS=$$($1_SRC_DIR): pdflatex --draftmode $(PDF_FLAGS) -jobname=$1 $$($1_FLAGS) $$($1_SRC_DIR)$$($1_TEX)
+
+ifeq ($$($1_BIB_TYPE),biber)
+$1_BIB_DEP = $(BUILD_DIR)$1.bcf
+else
+$1_BIB_DEP = $(BUILD_DIR)$1.aux
+endif
+
+$(BUILD_DIR)$1.bbl: $$($1_BIB_DEP) $$($1_SRC_DIR)$$($1_BIB)
+ifeq ($$($1_BIB_TYPE),biber)
+	biber --input-directory $(BUILD_DIR) --output-directory $(BUILD_DIR) $1
+else
 	BIBINPUTS=$$($1_SRC_DIR): bibtex $(BUILD_DIR)$1
+endif
 
 $(BUILD_DIR)$1.gls: $(BUILD_DIR)$1.aux $$($1_SRC_DIR)$$($1_GLOSSARY)
 	makeglossaries $(GLO_FLAGS) $1
